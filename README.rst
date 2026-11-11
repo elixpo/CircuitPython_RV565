@@ -243,6 +243,9 @@ RV565
 * Paper: Ayushman Bhattacharya, *RV565: Cross-Layer Co-Design for
   Frame-Independent Video Playback on MicroPython-Class ESP32-S3 Systems*,
   `arXiv:2610.35935 <https://arxiv.org/abs/2610.35935>`_
+* Adafruit blog: `RV565: frame-independent RGB565 video for ESP32-S3 and RP2350 SPI displays
+  <https://blog.adafruit.com/2026/11/10/rv565-frame-independent-rgb565-video-for-esp32-s3-and-rp2350-spi-displays/>`_
+* Porting RV565 to the Raspberry Pi Pico 2: `The Screen Was Blank <https://blogs.elixpo.com/elixpohere/rv565-pico-2-tweak>`_
 
 The Oreo family
 ===============
