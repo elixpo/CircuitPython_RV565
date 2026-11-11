@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2022 Alec Delaney, written for Adafruit Industries
+# SPDX-FileCopyrightText: Copyright (c) 2026 Ayushman Bhattacharya
+#
+# SPDX-License-Identifier: MIT
+
+[build-system]
+requires = [
+    "setuptools",
+    "wheel",
+    "setuptools-scm",
+]
+
+[project]
+name = "circuitpython-rv565"
+description = "Play RV565 frame-independent RGB565 video files on CircuitPython displays."
+version = "0.0.0+auto.0"
+readme = "README.rst"
+authors = [
+    {name = "Ayushman Bhattacharya", email = "ayushman.elixpo@gmail.com"}
+]
+urls = {Homepage = "https://github.com/elixpo/CircuitPython_RV565", Documentation = "https://circuitpython-rv565.readthedocs.io/", "RV565 project" = "https://github.com/elixpo/rv565", Paper = "https://arxiv.org/abs/2610.35935"}
+keywords = [
+    "adafruit",
+    "blinka",
+    "circuitpython",
+    "micropython",
+    "rv565",
+    "video",
+    "rgb565",
+    "displayio",
+    "st7789",
+]
+license = "MIT"
+classifiers = [
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Embedded Systems",
+    "Topic :: System :: Hardware",
+    "Topic :: Multimedia :: Video :: Display",
+    "Programming Language :: Python :: 3",
+]
+dynamic = ["dependencies", "optional-dependencies"]
+
+[tool.setuptools]
+py-modules = ["circuitpython_rv565"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+optional-dependencies = {optional = {file = ["optional_requirements.txt"]}}

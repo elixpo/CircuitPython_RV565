@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2022 Alec Delaney, for Adafruit Industries
+#
+# SPDX-License-Identifier: Unlicense
+
+# Only for the examples that drive an external ST7789.
+adafruit-circuitpython-st7789

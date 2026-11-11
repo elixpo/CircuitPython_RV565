@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2017 Scott Shawcroft, written for Adafruit Industries
+# SPDX-FileCopyrightText: Copyright (c) 2026 Ayushman Bhattacharya
+#
+# SPDX-License-Identifier: MIT
+
+# The same steps as adafruit/workflows-circuitpython-libs/release-pypi
+# (stamp the release tag over 0.0.0+auto.0, then build), but published with
+# PyPI trusted publishing (OIDC) instead of a stored username and password.
+# On pypi.org, add a trusted publisher for this repository with workflow
+# "release_pypi.yml" and environment "pypi".
+
+name: PyPI Release Actions
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  upload-release-assets:
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/circuitpython-rv565/
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        show-progress: false
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade build twine
+    - name: Build
+      run: |
+        find -type f -not -path "./.*" -not -path "./docs*" \( -name "*.py" -o -name "*.toml" \) -exec sed -i -e "s/0.0.0+auto.0/${{ github.event.release.tag_name }}/" {} +
+        python -m build
+        twine check dist/*
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
