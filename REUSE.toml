@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 Ayushman Bhattacharya
+# SPDX-License-Identifier: MIT
+
+version = 1
+
+# RV565 conformance vectors, copied from github.com/elixpo/rv565 tests/data.
+[[annotations]]
+path = "tests/data/**"
+SPDX-FileCopyrightText = "2026 Ayushman Bhattacharya"
+SPDX-License-Identifier = "MIT"
