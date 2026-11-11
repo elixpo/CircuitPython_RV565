@@ -11,6 +11,10 @@ on:
 jobs:
   upload-release-assets:
     runs-on: ubuntu-latest
+    # The elixpo organisation's default token is read-only; uploading the
+    # bundles to the release needs write access to the repository contents.
+    permissions:
+      contents: write
     steps:
     - name: Run GitHub Release CI workflow
       uses: adafruit/workflows-circuitpython-libs/release-gh@main
