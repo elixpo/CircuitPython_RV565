@@ -35,7 +35,7 @@ def reference_frames(data):
     return frames
 
 
-def build(width=4, height=2, fps=10, frames=None, version=6, magic=b"RV5", count=None, wbits=15):  # noqa: PLR0913, PLR0917
+def build(width=4, height=2, fps=10, frames=None, version=6, magic=b"RV5", count=None, wbits=15):
     """An RV565 file from a list of raw frames."""
     if frames is None:
         frames = [bytes([i]) * (2 * width * height) for i in range(3)]
@@ -78,7 +78,7 @@ class ReaderTest(unittest.TestCase):
 
     def test_all_frames_match_zlib_from_path(self):
         with rv565.open(str(VECTOR)) as clip:
-            self.assertEqual(list(clip), self.expected)
+            self.assertEqual([bytes(f) for f in clip], self.expected)
 
     def test_file_object_is_not_closed(self):
         stream = io.BytesIO(self.data)
@@ -225,7 +225,7 @@ class PlayerTest(unittest.TestCase):
         self.data = VECTOR.read_bytes()
         self.expected = reference_frames(self.data)
 
-    def tearDown(self):  # noqa: PLR6301
+    def tearDown(self):
         fakes.uninstall()
 
     def test_bitmap_setup(self):
@@ -306,7 +306,7 @@ class PacingTest(unittest.TestCase):
         fakes.install()
         self.clip = rv565.open(VECTOR.read_bytes())  # 24 frames at 24 FPS
 
-    def tearDown(self):  # noqa: PLR6301
+    def tearDown(self):
         fakes.uninstall()
 
     def test_fast_decode_plays_every_frame_at_rate(self):

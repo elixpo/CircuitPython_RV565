@@ -24,13 +24,40 @@ Introduction
 Play `RV565 <https://github.com/elixpo/rv565>`_ video files on CircuitPython
 displays.
 
-RV565 stores video as independently zlib-compressed frames whose decoded
-bytes are already big-endian RGB565, the native pixel format of ST7789-class
-SPI panels (`format specification
+RV565 stores video as frames whose decoded bytes are already in the
+display's native pixel format (`format specification
 <https://github.com/elixpo/rv565/blob/main/docs/FORMAT.md>`_, paper:
 `arXiv:2610.35935 <https://arxiv.org/abs/2610.35935>`_). This library reads
 them in pure Python with CircuitPython's built-in ``zlib`` and shows them with
 ``displayio``, or sends them straight to an ST7789.
+
+Version 2.0 reads **format version 7**: all nine pixel formats (``rgb565be``,
+``rgb565le``, ``rgb444``, ``rgb666``, ``rgb888``, ``gray8``, ``gray4``,
+``mono``, ``mono_vpage``), both codecs (stored and zlib), and keyframes, XOR
+delta frames and repeat frames, with seeking through the keyframe interval.
+Version 6 files (RGB565 big-endian, zlib, every frame a keyframe) still read.
+
+=================  ==================================================
+Player             Pixel formats it shows
+=================  ==================================================
+``Player``         ``rgb565be``, ``rgb565le``, ``gray8``, ``gray4``,
+                   ``mono``
+``DirectPlayer``   ``rgb565be``, ``rgb666`` (ST7789 in 18-bit mode)
+``Clip.frame()``   all nine (raw bytes in the clip's format)
+=================  ==================================================
+
+Either player raises ``RV565Error`` naming the formats it supports for any
+other clip. The version 7 paths are tested on a computer against every RV565
+conformance vector (``tests/data/v7``); on a board, only version 6 clips have
+been played so far (Raspberry Pi Pico 2, CircuitPython 10.3.1).
+
+``clip.frame(i)`` returns the clip's own frame buffer, overwritten by the next
+call; copy it with ``bytes()`` to keep it. With a 180x135 RGB565 zlib clip,
+``Player`` needs roughly 150 to 200 KiB of heap at its peak and
+``DirectPlayer`` roughly 100 KiB: one frame buffer kept between frames, the
+inflate output, and for ``Player`` the bitmap. A delta frame adds one XOR over
+the frame, done in 2 KiB chunks through long integers where the board has
+them. Repeat frames are neither decoded nor drawn.
 
 It is the easy way to try RV565 on a board without a C toolchain. The
 `RV565 C library <https://github.com/elixpo/rv565>`_ (Arduino, ESP-IDF,

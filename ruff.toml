@@ -4,6 +4,8 @@
 
 target-version = "py38"
 line-length = 100
+# A copy of the RV565 CPython reference package, used only by the tests.
+extend-exclude = ["tests/rv565_reference.py"]
 
 [lint]
 preview = true
