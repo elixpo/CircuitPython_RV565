@@ -34,7 +34,9 @@ them in pure Python with CircuitPython's built-in ``zlib`` and shows them with
 Version 2.0 reads **format version 7**: all nine pixel formats (``rgb565be``,
 ``rgb565le``, ``rgb444``, ``rgb666``, ``rgb888``, ``gray8``, ``gray4``,
 ``mono``, ``mono_vpage``), both codecs (stored and zlib), and keyframes, XOR
-delta frames and repeat frames, with seeking through the keyframe interval.
+delta frames, partial deltas (only the changed bands of lines, each band
+optionally shifted) and repeat frames, with seeking through the keyframe
+interval.
 Version 6 files (RGB565 big-endian, zlib, every frame a keyframe) still read.
 
 =================  ==================================================
@@ -58,6 +60,18 @@ call; copy it with ``bytes()`` to keep it. With a 180x135 RGB565 zlib clip,
 inflate output, and for ``Player`` the bitmap. A delta frame adds one XOR over
 the frame, done in 2 KiB chunks through long integers where the board has
 them. Repeat frames are neither decoded nor drawn.
+
+A partial delta inflates only its changed bands (the inflate output is that
+size, not a frame) and XORs them into the frame buffer in place; a shifted
+band is first predicted from a copy of itself, so it needs one band of
+scratch. Both players then redraw only those rows: ``DirectPlayer`` sets the
+row window and writes each run of changed bands, and ``Player`` copies only
+those rows into the bitmap so ``displayio`` refreshes only that area. After
+skipped frames they draw the union of the rows those frames changed.
+``clip.changed_lines(i)`` lists a frame's changed line runs,
+``clip.dirty_lines(since, i)`` merges them across frames, and
+``PlayStats.rows_updated`` counts the rows drawn. The version 7 and partial
+paths have been tested on a computer only.
 
 It is the easy way to try RV565 on a board without a C toolchain. The
 `RV565 C library <https://github.com/elixpo/rv565>`_ (Arduino, ESP-IDF,
@@ -228,11 +242,15 @@ The bitmap stores each value as a little-endian 16-bit word, so copying the
 file's big-endian bytes in unchanged gives byte-swapped values, which is
 exactly what ``RGB565_SWAPPED`` describes (the same convention ``gifio``
 uses). The copy is one ``bitmaptools.readinto()`` call; boards without it fall
-back to a much slower per-pixel loop.
+back to a much slower per-pixel loop. When only some rows changed (a partial
+delta), it reads those rows into a small scratch bitmap with ``readinto`` and
+copies it into place with ``bitmaptools.blit`` (``Bitmap.blit`` on
+CircuitPython 8), 8 rows at a time, so only those rows are marked dirty.
 
 ``DirectPlayer`` skips ``displayio``: since RV565 bytes are already what an
 ST7789 expects, it sets the address window and sends each frame with one
-``bus.send()``. It needs the display to be initialised first (for example by
+``bus.send()``; for a partial delta it sends one row window (RASET) and one
+write per run of changed bands instead. It needs the display to be initialised first (for example by
 ``adafruit_st7789``) and takes the panel over while playing. ``displayio``
 rotation is done in software and never reaches the controller, so for a
 landscape panel ``DirectPlayer`` sets MADCTL to ``0x60`` before playing and
@@ -253,7 +271,14 @@ The tests run with CPython and stand-ins for ``displayio`` and
 They check the reader against ``examples/testpattern.rv565`` (all 24 frames
 must equal CPython's zlib output), every validation rule of the format, that
 the bitmap shows the right colour for every pixel, frame pacing and skipping,
-the bytes ``DirectPlayer`` sends, and that every example runs.
+the bytes ``DirectPlayer`` sends, and that every example runs. ``test_v7.py``
+checks every conformance vector in ``tests/data/v7`` (a copy of the RV565
+repository's; per-frame SHA-256 and changed lines, in order and by random
+seeks; every invalid file rejected at its stage), shifted bands against the
+reference package (``tests/rv565_reference.py``, a copy), that partial deltas
+mark only their changed rows of the bitmap dirty, and, through a model of the
+panel's memory, that ``DirectPlayer`` leaves exactly each frame on the panel
+while sending fewer bytes for partial deltas.
 
 Documentation
 =============
