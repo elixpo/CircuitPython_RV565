@@ -303,7 +303,7 @@ The Falera family
 =================
 
 One project in three repositories, grouped under the
-`oreo-badge <https://github.com/orgs/elixpo/repositories?q=topic%3Aoreo-badge>`_ topic:
+`falera-badge <https://github.com/orgs/elixpo/repositories?q=topic%3Afalera-badge>`_ topic:
 
 * `elixpo/falera <https://github.com/elixpo/falera>`_: the Falera Badge hardware, FaleraOS (formerly OreoOS) and the ``falera`` CLI
 * `elixpo/rv565 <https://github.com/elixpo/rv565>`_: RV565, the badge's video format (C library, encoder, Arduino, ESP-IDF and Pico SDK)
