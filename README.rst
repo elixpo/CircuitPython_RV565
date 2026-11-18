@@ -219,7 +219,7 @@ The examples folder has:
 Making clips
 ------------
 
-Use the `online converter <https://oreo.elixpo.com/rv565/convert/>`_, which
+Use the `online converter <https://falera.elixpo.com/rv565/convert/>`_, which
 runs in your browser, or the Python tool:
 
 .. code-block:: shell
@@ -299,13 +299,13 @@ RV565
   <https://blog.adafruit.com/2026/11/10/rv565-frame-independent-rgb565-video-for-esp32-s3-and-rp2350-spi-displays/>`_
 * Porting RV565 to the Raspberry Pi Pico 2: `The Screen Was Blank <https://blogs.elixpo.com/elixpohere/rv565-pico-2-tweak>`_
 
-The Oreo family
-===============
+The Falera family
+=================
 
 One project in three repositories, grouped under the
 `oreo-badge <https://github.com/orgs/elixpo/repositories?q=topic%3Aoreo-badge>`_ topic:
 
-* `elixpo/oreo <https://github.com/elixpo/oreo>`_: the Oreo Badge hardware, OreoOS and the ``oreo`` CLI
+* `elixpo/falera <https://github.com/elixpo/falera>`_: the Falera Badge hardware, FaleraOS (formerly OreoOS) and the ``falera`` CLI
 * `elixpo/rv565 <https://github.com/elixpo/rv565>`_: RV565, the badge's video format (C library, encoder, Arduino, ESP-IDF and Pico SDK)
 * `elixpo/CircuitPython_RV565 <https://github.com/elixpo/CircuitPython_RV565>`_: RV565 playback for CircuitPython
 
