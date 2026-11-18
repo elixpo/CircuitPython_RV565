@@ -95,8 +95,19 @@ ignore = [
     "UP030", # format literals
     "UP031", # printf-style formatting: kept so the module compiles with every mpy-cross
     "PLW1514",  # unspecified-encoding
-
+    "PLR6301",  # no-self-use: unstable (see the note above), and "PL" selected it anyway
+    "PLR6201",  # literal-membership: on MicroPython a constant tuple is one stored
+                # object, while a set literal allocates a new set on every call
 ]
+
+[lint.per-file-ignores]
+# The decoder's hot paths are inlined on purpose (fewer calls and allocations
+# per frame on a microcontroller), and its optional modules (array, time,
+# displayio, bitmaptools, io) are imported where they are used, so boards
+# without them, or short on RAM, still load the library.
+"circuitpython_rv565.py" = ["PLR0912", "PLR0913", "PLR0914", "PLR0915", "PLR0917", "PLC0415"]
+# Test fakes mirror CircuitPython APIs, which take many positional arguments.
+"tests/*" = ["PLR0913", "PLR0917"]
 
 [format]
 line-ending = "lf"
