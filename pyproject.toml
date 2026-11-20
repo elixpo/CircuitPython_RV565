@@ -12,7 +12,7 @@ requires = [
 
 [project]
 name = "circuitpython-rv565"
-description = "Play RV565 frame-independent RGB565 video files on CircuitPython displays."
+description = "Play RV565 video files (format versions 6, 7 and 8) on CircuitPython displays."
 version = "0.0.0+auto.0"
 readme = "README.rst"
 authors = [

@@ -31,13 +31,14 @@ display's native pixel format (`format specification
 them in pure Python with CircuitPython's built-in ``zlib`` and shows them with
 ``displayio``, or sends them straight to an ST7789.
 
-Version 2.0 reads **format version 7**: all nine pixel formats (``rgb565be``,
-``rgb565le``, ``rgb444``, ``rgb666``, ``rgb888``, ``gray8``, ``gray4``,
-``mono``, ``mono_vpage``), both codecs (stored and zlib), and keyframes, XOR
-delta frames, partial deltas (only the changed bands of lines, each band
-optionally shifted) and repeat frames, with seeking through the keyframe
-interval.
-Version 6 files (RGB565 big-endian, zlib, every frame a keyframe) still read.
+Version 3.0 reads **format version 8** and **version 7**: all nine pixel
+formats (``rgb565be``, ``rgb565le``, ``rgb444``, ``rgb666``, ``rgb888``,
+``gray8``, ``gray4``, ``mono``, ``mono_vpage``), both codecs (stored and zlib),
+and keyframes, XOR delta frames, partial deltas (only the changed bands of
+lines, each band optionally shifted), region deltas (version 8: only a byte
+range of each changed band) and repeat frames, with seeking through the
+keyframe interval. Version 6 files (RGB565 big-endian, zlib, every frame a
+keyframe) still read.
 
 =================  ==================================================
 Player             Pixel formats it shows
@@ -49,9 +50,10 @@ Player             Pixel formats it shows
 =================  ==================================================
 
 Either player raises ``RV565Error`` naming the formats it supports for any
-other clip. The version 7 paths are tested on a computer against every RV565
-conformance vector (``tests/data/v7``); on a board, only version 6 clips have
-been played so far (Raspberry Pi Pico 2, CircuitPython 10.3.1).
+other clip. The version 7 and 8 paths are tested on a computer against every
+RV565 conformance vector (``tests/data/v7`` and ``tests/data/v8``); on a
+board, only version 6 clips have been played so far (Raspberry Pi Pico 2,
+CircuitPython 10.3.1).
 
 ``clip.frame(i)`` returns the clip's own frame buffer, overwritten by the next
 call; copy it with ``bytes()`` to keep it. With a 180x135 RGB565 zlib clip,
@@ -70,8 +72,26 @@ those rows into the bitmap so ``displayio`` refreshes only that area. After
 skipped frames they draw the union of the rows those frames changed.
 ``clip.changed_lines(i)`` lists a frame's changed line runs,
 ``clip.dirty_lines(since, i)`` merges them across frames, and
-``PlayStats.rows_updated`` counts the rows drawn. The version 7 and partial
-paths have been tested on a computer only.
+``PlayStats.rows_updated`` counts the rows drawn.
+
+A region delta (format version 8) works the same way over each changed band's
+byte range only: the inflate output is the size of the ranges, a shifted band
+copies only the columns its range predicts from, and the players draw only
+those windows. ``DirectPlayer`` sets a column and row window (CASET and RASET)
+per changed band, gathering its lines into one buffer of at most 4 KiB, and
+``Player`` copies only those columns of the band's rows into the bitmap, so
+only that window is dirty. After skipped frames they fall back to whole rows.
+``clip.changed_rects(i)`` lists rectangles ``(first line, line count, first
+byte, byte count)``: for a region delta one per changed band, covering only
+its byte range, otherwise the runs of ``changed_lines`` across whole lines.
+``clip.columns(first_byte, byte_count)`` turns a byte range into ``(first
+column, column count)`` of pixels (columns ``x0 / A * p`` to ``(x0 + xw) / A *
+p - 1``, where ``p`` pixels take ``A`` bytes). ``clip.dirty_rects(since, i)``
+is ``dirty_lines`` as rectangles: a region delta's own rectangles when it is
+the only frame in between that is not a repeat, whole lines otherwise.
+``clip.frame_type(i)`` is ``"region"`` for these frames, and
+``PlayStats.pixels_updated`` (``player.last_pixels`` per frame) counts the
+pixels drawn. The version 7 and 8 paths have been tested on a computer only.
 
 It is the easy way to try RV565 on a board without a C toolchain. The
 `RV565 C library <https://github.com/elixpo/rv565>`_ (Arduino, ESP-IDF,
@@ -199,13 +219,15 @@ root of ``CIRCUITPY``, then run this as ``code.py``:
     stats = player.play()  # paced to clip.fps, late frames skipped
     print(stats)  # <PlayStats x.xx of 24 FPS: n shown, m skipped ...>
 
-``rv565.open()`` reads only the 12-byte header. The frame index is built on
-first use with one pass over the length fields (4 bytes of RAM per frame),
-which also validates the whole container; call ``clip.build_index()`` to do
+``rv565.open()`` reads only the header (16 bytes; 12 for version 6). The
+frame index is built on first use with one pass over the record headers (4
+bytes of RAM per frame, plus 1 for the frame types in versions 7 and 8), which
+also validates the whole container, including each partial or region delta's
+band mask, shifts and (region) byte ranges; call ``clip.build_index()`` to do
 that before playback. Frames are read from the file one at a time, so a clip
 on ``CIRCUITPY`` or an SD card does not have to fit in RAM. ``clip.frame(i)``
-returns frame ``i`` as big-endian RGB565 bytes and raises ``RV565Error`` if it
-does not inflate to exactly ``2 * width * height`` bytes.
+returns frame ``i`` as bytes in the clip's pixel format and raises
+``RV565Error`` if it does not inflate to the expected size.
 
 The examples folder has:
 
@@ -245,12 +267,15 @@ uses). The copy is one ``bitmaptools.readinto()`` call; boards without it fall
 back to a much slower per-pixel loop. When only some rows changed (a partial
 delta), it reads those rows into a small scratch bitmap with ``readinto`` and
 copies it into place with ``bitmaptools.blit`` (``Bitmap.blit`` on
-CircuitPython 8), 8 rows at a time, so only those rows are marked dirty.
+CircuitPython 8), 8 rows at a time, so only those rows are marked dirty. For
+a region delta it blits only each band's range of columns, so only that window
+is dirty.
 
 ``DirectPlayer`` skips ``displayio``: since RV565 bytes are already what an
 ST7789 expects, it sets the address window and sends each frame with one
 ``bus.send()``; for a partial delta it sends one row window (RASET) and one
-write per run of changed bands instead. It needs the display to be initialised first (for example by
+write per run of changed bands instead, and for a region delta one column and
+row window per changed band, covering its byte range. It needs the display to be initialised first (for example by
 ``adafruit_st7789``) and takes the panel over while playing. ``displayio``
 rotation is done in software and never reaches the controller, so for a
 landscape panel ``DirectPlayer`` sets MADCTL to ``0x60`` before playing and
@@ -278,7 +303,11 @@ seeks; every invalid file rejected at its stage), shifted bands against the
 reference package (``tests/rv565_reference.py``, a copy), that partial deltas
 mark only their changed rows of the bitmap dirty, and, through a model of the
 panel's memory, that ``DirectPlayer`` leaves exactly each frame on the panel
-while sending fewer bytes for partial deltas.
+while sending fewer bytes for partial deltas. ``test_v8.py`` does the same for
+the version 8 vectors in ``tests/data/v8`` (also checking each frame's
+``changed_rects``), and checks that region deltas mark only their windows of
+the bitmap dirty and that ``DirectPlayer`` sends one column window per changed
+band.
 
 Documentation
 =============
